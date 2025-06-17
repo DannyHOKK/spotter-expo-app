@@ -1,3 +1,4 @@
+import { useAuth } from "@/contexts/AuthContext";
 import {
   GoogleSignin,
   GoogleSigninButton,
@@ -5,11 +6,13 @@ import {
   isSuccessResponse,
   statusCodes,
 } from "@react-native-google-signin/google-signin";
+import axios from "axios";
 import { useState } from "react";
 import { Text, View } from "react-native";
 
 export default function Index() {
   const [userInfo, setUserInfo] = useState({});
+  const { signInUserData } = useAuth();
 
   GoogleSignin.configure({
     webClientId:
@@ -26,10 +29,22 @@ export default function Index() {
       await GoogleSignin.hasPlayServices();
       const response = await GoogleSignin.signIn();
 
-      console.log(response);
-      console.log("hi");
       if (isSuccessResponse(response)) {
         setUserInfo(response.data);
+        // signInUserData(response.data);
+        const result = await axios.post(
+          "http://localhost:8080/api/user/oauth2/google",
+          {
+            code: response.data.serverAuthCode,
+            userId: response.data.user.id,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        console.log(result.data.data);
       } else {
         // sign in was cancelled by user
       }
